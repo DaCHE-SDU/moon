@@ -1,0 +1,617 @@
+---
+title: "Getting started with MOON"
+subtitle: "Run the Norwegian baseline end-to-end: deterministic, scenarios, PSA"
+author: "Nicolai Damslund"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+    fig-width: 7
+    fig-height: 4.5
+    theme: cosmo
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+vignette: >
+  %\VignetteIndexEntry{Getting started with MOON}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+library(moon)
+library(ggplot2)
+```
+
+# What this vignette covers
+
+This is the entry-point tour of the **moon** package: how to run the
+published Norwegian model with the bundled inputs and inspect what comes
+back. Everything here uses defaults — no parameter editing.
+
+If you want to *modify* the inputs (different costs, tighter mortality
+HRs, swap the life table, build your own PSA specs), see the companion
+vignette **"Customizing MOON"**.
+
+
+# 1. The MOON model in one screen
+
+MOON is a **discrete-time Markov cohort model** that simulates a
+Norwegian birth cohort from age 2 to ~age 100, in 1-year cycles. The
+state space is five live BMI bands plus an absorbing dead state:
+
+- `N_always` — always normal weight (BMI 18.5–25)
+- `N_prev` — currently normal weight but previously OW or OB
+- `OW` — overweight (BMI 25–30)
+- `OB1` — obese grade 1 (BMI 30–35)
+- `OB2` — obese grade 2+ (BMI ≥ 35)
+- `dead` — absorbing
+
+Transition probabilities come from parametric survival analyses on
+Norwegian longitudinal cohorts; mortality is age- and BMI-specific
+(life table × hazard ratios from the Global BMI Mortality Collaboration);
+costs are per-capita 2009 EUR/year by age and state. The original model
+was implemented in Excel — see Bjørnelv et al. 2021,
+*Medical Decision Making*,
+[doi:10.1177/0272989X20971589](https://doi.org/10.1177/0272989X20971589).
+This R port lifts every input into typed objects, adds an S3 layer over
+the run output, and exposes a clean PSA path through a parameter-spec
+system.
+
+
+# 2. The public surface
+
+The public API is deliberately compact:
+
+| Function | Purpose |
+|---|---|
+| `moon_params_norway(sex, uncertainty)` | Build the Norwegian-baseline parameter list (deterministic or PSA-ready). |
+| `moon_check_params(params)` | Validate shapes / row sums / value ranges. |
+| `moon_deterministic(params, tp_overrides)` | One Markov run; returns a `moon_deterministic`. |
+| `moon_psa(spec, n_iter, seed, ...)` | A full PSA; returns a `moon_psa`. |
+| `moon_prevalence()`, `moon_costs()` | Long-form extractors on a run object. |
+| `print()` / `summary()` / `plot()` / `as.data.frame()` | S3 methods on `moon_deterministic` and `moon_psa`. |
+
+The minimum end-to-end example is three lines:
+
+```{r minimal-example}
+params <- moon_params_norway("female")
+res <- moon_deterministic(params)
+summary(res)
+```
+
+Everything else in this document is layering on top of these calls.
+
+
+# 3. Loading parameters
+
+`moon_params_norway()` builds the engine-shape `params` list for the
+published Norwegian birth cohort. Pass one sex per call:
+
+```{r load-params}
+params_F <- moon_params_norway("female")
+str(params_F, max.level = 1)
+```
+
+Slot anatomy:
+
+| Slot | Type | What it carries |
+|---|---|---|
+| `start_age`, `max_age` | int | model horizon (2 → 100) |
+| `discount_rate` | num | 0.04 by default |
+| `cost_currency` | chr | "EUR" |
+| `cohort_n` | named int | cohort size, key = sex label |
+| `init_prev` | named num | NW/OW/OB1/OB2 mass at `start_age` |
+| `qx` | named num | NW baseline yearly mortality, ages 2–100 |
+| `mortality_hr` | data.frame | HRs vs NW for OW/OB1/OB2 by age band |
+| `transition_probs` | data.frame | yearly between-state transitions, ages 2–99 |
+| `cost_df` | data.frame | per-capita yearly cost by age × state |
+
+`cohort_n` is a *named* integer (`c(female = 26458L)`) so the sex label
+is recoverable from the params alone — useful when you stitch results
+from multiple sexes together.
+
+Setting `uncertainty = TRUE` returns the same shape but with
+the uncertain slots wrapped as `moon_param_*` spec objects, ready for
+PSA. We come back to that in [§11](#psa-on-the-norwegian-baseline).
+
+
+# 4. Validating with `moon_check_params()`
+
+```{r validate}
+moon_check_params(params_F)
+```
+
+`moon_check_params()` is silent on success and errors loudly on
+problems: shape mismatches, off-simplex `init_prev`, transition
+probabilities outside [0, 1], age misalignment between
+`transition_probs` and `start_age`/`max_age`, etc. Three phases run in
+order — structural, range, then cross-object consistency — and any
+problems found are reported in one batch.
+
+It runs implicitly inside `moon_deterministic()` (with `strict = TRUE`).
+Calling it standalone is useful when you've mutated `params` and want to
+fail fast before kicking off a full run; pass `strict = FALSE` to
+downgrade the error to a warning while iterating.
+
+
+# 5. Running deterministically
+
+```{r run-deterministic}
+res_F <- moon_deterministic(params_F)
+class(res_F)
+names(res_F)
+```
+
+A `moon_deterministic` is a list with four named slots:
+
+- **`$trace`** — long data frame `(age, sex, state, n)`. Six states
+  including `dead` and the engine's full `N_always` / `N_prev` split. `n`
+  is a head-count denominated by `params$cohort_n`.
+- **`$costs`** — long data frame `(age, sex, state, cost, cost_disc)`,
+  five live states. `cost` is total euros that age-state cell incurred;
+  `cost_disc` applies `params$discount_rate`. `dead` is excluded.
+- **`$params`** — the input list, stored verbatim. Useful for auditing
+  and re-running.
+- **`$meta`** — runtime metadata (R version, timestamp, duration,
+  horizon, discount rate, applied `tp_overrides`).
+
+```{r preview-trace-costs}
+head(res_F$trace, 6)
+head(res_F$costs, 6)
+```
+
+
+# 6. Inspecting with S3 methods
+
+## 6.1 `print()` — the headline
+
+```{r print}
+print(res_F)
+```
+
+## 6.2 `summary()` — richer metrics
+
+`summary()` returns a `summary.moon_deterministic` (a list with a print
+method). Capture it and pull fields out for downstream calculation:
+
+```{r summary}
+summary(res_F)
+
+s <- summary(res_F)
+s$LE
+s$prev_age45
+s$inc_cost_state
+```
+
+## 6.3 `plot()` — five canned views
+
+`plot.moon_deterministic()` takes a `type =` argument with five
+options. All return ggplot objects, so `+ theme_*()` and `ggsave()`
+work without reaching inside.
+
+::: {.panel-tabset}
+
+### occupancy
+
+```{r plot-occupancy}
+plot(res_F, type = "occupancy")
+```
+
+Cohort head-counts by state. The `dead` line rises monotonically.
+
+### prevalence_alive
+
+```{r plot-prevalence-alive}
+plot(res_F, type = "prevalence_alive")
+```
+
+Each state as a fraction of the cohort still alive at that age. Lines
+sum to 1 per age.
+
+### prevalence_initial
+
+```{r plot-prevalence-initial}
+plot(res_F, type = "prevalence_initial")
+```
+
+Each state as a fraction of the **initial** cohort. Lines no longer
+sum to 1 because `dead` siphons mass over time — useful when you want
+survivor-adjusted prevalences directly.
+
+### survival
+
+```{r plot-survival}
+plot(res_F, type = "survival")
+```
+
+Kaplan–Meier-style survival curve.
+
+### costs
+
+```{r plot-costs}
+plot(res_F, type = "costs")
+```
+
+Per-capita per-age incremental cost vs an "everyone is NW"
+counterfactual, broken out by state.
+
+:::
+
+## 6.4 `as.data.frame()`
+
+```{r as-data-frame}
+head(as.data.frame(res_F, what = "trace"), 3)
+head(as.data.frame(res_F, what = "costs"), 3)
+```
+
+Identical to `res_F$trace` / `res_F$costs` but reads more idiomatically
+in pipelines.
+
+
+# 7. Long-form extractors
+
+The S3 plots cover the headlines; most real analyses want raw long-form
+data. There are two public extractors plus the underlying `$trace` /
+`$costs` frames.
+
+## 7.1 `moon_prevalence()`
+
+```{r prev-alive}
+moon_prevalence(res_F, denominator = "alive", ages = c(2, 30, 45, 65))
+```
+
+Same data with the **initial** denominator (note the `dead` row at age
+65, and that the within-age sum is no longer 1):
+
+```{r prev-initial}
+moon_prevalence(res_F, denominator = "initial", ages = c(2, 30, 45, 65))
+```
+
+## 7.2 `moon_costs()`
+
+`moon_costs()` aggregates `$costs` over a single dimension chosen via
+`by =` (`"total"` returns a scalar; `"age"`, `"state"`, or `"sex"`
+return a long data frame). Restrict ages with `ages =`, switch to
+discounted euros with `discounted = TRUE`.
+
+```{r costs-total}
+moon_costs(res_F, by = "total")
+moon_costs(res_F, by = "total", discounted = TRUE)
+```
+
+```{r costs-by-state}
+moon_costs(res_F, by = "state")
+```
+
+```{r costs-by-age}
+moon_costs(res_F, by = "age", discounted = TRUE, ages = c(20, 50, 80))
+```
+
+
+# 8. Building your own plot
+
+A worked example: take the full cohort decomposition out of
+`moon_prevalence()` and turn it into a stacked-area plot — every state
+on one axis, summing to 100% of the initial cohort at every age.
+
+```{r custom-plot}
+state_mix <- moon_prevalence(res_F, denominator = "initial")
+state_mix$state <- factor(
+  state_mix$state,
+  levels = c("dead", "N_always", "N_prev", "OW", "OB1", "OB2")
+)
+
+state_palette <- c(
+  dead     = "grey70",
+  N_always = "#1b7837",
+  N_prev   = "#7fbf7b",
+  OW       = "#f1a340",
+  OB1      = "#e08214",
+  OB2      = "#b35806"
+)
+
+ggplot(state_mix, aes(x = age, y = prevalence, fill = state)) +
+  geom_area(position = "stack", colour = "white", linewidth = 0.1) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    expand = c(0, 0)
+  ) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = state_palette) +
+  labs(
+    x = "Age",
+    y = "Share of initial cohort",
+    fill = NULL,
+    title = "Female cohort state composition — Norwegian baseline",
+    subtitle = "Stack reaches 100% of the age-2 cohort at every age"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+You are never locked into the canned plots. The extractors and
+`$trace` / `$costs` frames give you raw long data; everything else is
+whatever your downstream code does best.
+
+
+# 9. Comparing sexes
+
+`moon_params_norway()` is single-sex per call. Run all three strata and
+stitch the headline numbers into one table:
+
+```{r compare-sexes}
+res_M <- moon_deterministic(moon_params_norway("male"))
+res_both <- moon_deterministic(moon_params_norway("both"))
+
+inc_cost_per_capita <- function(result) {
+  m <- merge(
+    result$trace,
+    result$costs,
+    by = c("age", "sex", "state"),
+    all.x = TRUE
+  )
+  m$c <- ifelse(m$n > 0 & !is.na(m$cost), m$cost / m$n, 0)
+  c_NW <- m$c[m$state == "N_always"]
+  names(c_NW) <- m$age[m$state == "N_always"]
+  m$c_NW <- c_NW[as.character(m$age)]
+  obese <- m$state %in% c("OW", "OB1", "OB2")
+  sum(m$n[obese] * (m$c[obese] - m$c_NW[obese])) /
+    unname(result$params$cohort_n)
+}
+
+data.frame(
+  sex = c("female", "male", "both"),
+  inc_cost_eur = round(c(
+    inc_cost_per_capita(res_F),
+    inc_cost_per_capita(res_M),
+    inc_cost_per_capita(res_both)
+  ))
+)
+```
+
+These are lifetime cumulative incremental costs per cohort member,
+relative to an all-NW counterfactual.
+
+
+# 10. Built-in scenarios via `tp_overrides=`
+
+Every paper scenario can be run by passing a one-shot `tp_overrides`
+list to `moon_deterministic()`. Three slots are recognised:
+
+- `set_zero` — character vector of transition columns to zero out
+  (e.g. `"OW_OB1"`, which closes the only path *into* the obesity
+  ladder).
+- `init_prev` — replace the params' initial state vector for this run.
+- `start_age` — start the cohort later than `params$start_age` (used
+  by paper scenarios SA3-6, which start everyone at age 30).
+
+The example below reproduces paper scenario **SA2** (eliminate OB1+OB2
+by closing OW→OB1 and re-allocating any starting OB1+OB2 mass to OW):
+
+```{r sa2}
+ip <- params_F$init_prev
+ip_sa2 <- c(
+  NW = unname(ip["NW"]),
+  OW = unname(ip["OW"] + ip["OB1"] + ip["OB2"]),
+  OB1 = 0,
+  OB2 = 0
+)
+
+res_F_sa2 <- moon_deterministic(
+  params_F,
+  tp_overrides = list(set_zero = "OW_OB1", init_prev = ip_sa2)
+)
+
+c(
+  LE_baseline = summary(res_F)$LE,
+  LE_SA2 = summary(res_F_sa2)$LE,
+  YLL_female = summary(res_F_sa2)$LE - summary(res_F)$LE
+)
+```
+
+`YLL_female` is the per-person years-of-life lost attributable to
+obesity in this cohort — the gap between the obesity-eliminated
+counterfactual and the baseline run.
+
+> `tp_overrides=` is a one-shot flag passed at the call site; the
+> `params` object is untouched. If you instead want a permanent change
+> ("this is my new baseline"), edit `params` directly — see the
+> "Customizing MOON" vignette.
+
+
+# 11. PSA on the Norwegian baseline
+
+PSA uses the **same loader**, just with `uncertainty = TRUE`. The slots
+the paper treats as random become `moon_param_*` spec objects;
+everything else stays plain.
+
+```{r psa-spec}
+spec_F <- moon_params_norway("female", uncertainty = TRUE)
+str(spec_F, max.level = 1)
+```
+
+The slot shapes match the deterministic loader, but the contents of
+the uncertain slots have changed:
+
+```{r psa-spec-classes}
+class(spec_F$mortality_hr$OW[[1]])
+class(spec_F$cost_df$cost[[1]])
+class(spec_F$transition_probs$specs[[1]])
+length(spec_F$transition_probs$specs)
+```
+
+- `mortality_hr$OW` (and `$OB1`, `$OB2`) is a list-column of
+  `moon_param_lognormal` specs, one per age band.
+- `cost_df$cost` is a list-column of `moon_param_gamma` specs, one
+  per `(age, state)` cell. Ages 2–19 have mean = se = 0 (degenerate
+  gammas that always sample 0).
+- `transition_probs` becomes `list(specs, bands)` — `specs` holds 18
+  `moon_param_mvnorm` objects (one per transition × age band).
+
+`init_prev`, `qx`, scalars, and `cohort_n` stay as plain values: the
+paper does not treat these as uncertain.
+
+## 11.1 Running PSA
+
+```{r psa-run}
+psa_F <- moon_psa(
+  spec_F,
+  n_iter = 100,
+  seed = 123,
+  store_traces = "all"
+)
+class(psa_F)
+names(psa_F)
+```
+
+`store_traces` controls how much you keep:
+
+- `"none"` — discard per-iteration cohort traces. Smallest object;
+  enough for forest plots.
+- `"summary"` (default) — keep iteration-level summary metrics only.
+- `"all"` — keep every iteration's full `moon_deterministic`. Required
+  for the `incremental_cost_age` band plot. Uses ~few-hundred KB per
+  iteration.
+
+The `moon_psa` return has six slots:
+
+- `$summary` — aggregated stats `(sex, metric, mean, lower95,
+  upper95, sd)`. Twelve metrics per sex.
+- `$per_iter` — long table `(iter, sex, metric, value)` — the source
+  for any custom credible-interval calculation.
+- `$traces` — depends on `store_traces`.
+- `$draws` — long table of HR sampled values keyed by
+  `(iter, parameter)`. Audit trail for "which exact draws produced
+  this iteration's results".
+- `$params_spec` — the input spec, so you can re-run from scratch.
+- `$meta` — `n_iter`, `seed`, `parallel`, `runtime_sec`, the
+  correlation flags, `store_traces`, `tp_overrides`.
+
+```{r psa-frames}
+head(psa_F$summary)
+head(psa_F$per_iter)
+```
+
+## 11.2 Inspecting with S3 methods
+
+```{r psa-print}
+print(psa_F)
+summary(psa_F)
+```
+
+`plot.moon_psa()` has two types:
+
+::: {.panel-tabset}
+
+### forest
+
+```{r psa-plot-forest}
+plot(psa_F, type = "forest")
+```
+
+Point estimate + 95% CI for every metric.
+
+### incremental_cost_age
+
+```{r psa-plot-cost-age}
+plot(psa_F, type = "incremental_cost_age")
+```
+
+Per-age incremental cost vs NW with mean and 2.5–97.5% bands across
+iterations. Requires `store_traces = "all"`.
+
+:::
+
+## 11.3 Custom credible intervals from `$per_iter`
+
+Same "you're not locked in" message as [§8](#building-your-own-plot) — `$per_iter` is a long
+data frame with one row per (iter × metric × sex), so any
+quantile-based summary is one base-R call.
+
+```{r psa-custom-ci}
+le_draws <- psa_F$per_iter$value[psa_F$per_iter$metric == "LE"]
+quantile(le_draws, c(0.025, 0.5, 0.975))
+
+inc_total <- psa_F$per_iter$value[
+  psa_F$per_iter$metric == "cum_inc_cost_total_undisc"
+]
+sprintf(
+  "Female mean inc cost: EUR %s [EUR %s, EUR %s]",
+  format(round(mean(inc_total)), big.mark = ","),
+  format(round(quantile(inc_total, 0.025)), big.mark = ","),
+  format(round(quantile(inc_total, 0.975)), big.mark = ",")
+)
+```
+
+## 11.4 Reproducibility & speed knobs
+
+- **`seed`** — sets the random seed before sampling. Same seed + same
+  spec ⇒ bit-identical PSA results.
+- **`correlate_hr` / `correlate_cost`** — toggle the legacy single-Z /
+  single-U shared-randomness behaviour. Default `TRUE` matches what
+  the paper authors ran. Set `FALSE` for independent draws per spec.
+- **`parallel = TRUE`** — opt into `furrr` (if installed). Iterations
+  parallelise trivially; skipped here so the demo renders deterministically.
+- **`store_traces`** — set to `"summary"` or `"none"` for big runs;
+  the saved object can otherwise grow to hundreds of MB at 1000 iterations.
+
+
+# 12. PSA on a built-in scenario
+
+Pass `tp_overrides=` to `moon_psa()` and the override is applied to
+every iteration. This gives you a **credible interval on a scenario
+quantity** — for SA2 (eliminate OB1+OB2), the YLL distribution.
+
+```{r psa-scenario}
+psa_F_base <- moon_psa(
+  spec_F,
+  n_iter = 100,
+  seed = 123,
+  store_traces = "none"
+)
+psa_F_sa2 <- moon_psa(
+  spec_F,
+  n_iter = 100,
+  seed = 123,
+  tp_overrides = list(set_zero = "OW_OB1", init_prev = ip_sa2),
+  store_traces = "none"
+)
+
+le_base <- psa_F_base$per_iter$value[psa_F_base$per_iter$metric == "LE"]
+le_sa2 <- psa_F_sa2$per_iter$value[psa_F_sa2$per_iter$metric == "LE"]
+yll <- le_sa2 - le_base
+
+sprintf(
+  "Female YLL from eliminating OB1+OB2: %.2f y [%.2f, %.2f]",
+  mean(yll),
+  quantile(yll, 0.025),
+  quantile(yll, 0.975)
+)
+```
+
+Same `seed` for both runs ⇒ paired draws ⇒ the YLL distribution is
+the within-iteration difference, not a difference of independent
+samples — which is what you want for a credible interval on the
+incremental quantity.
+
+
+# 13. Where to go next
+
+- **"Customizing MOON"** — companion vignette covering how to alter
+  any input (deterministic and PSA), swap in your own datasets, and
+  build PSA specs from scratch.
+- **`?moon_deterministic`, `?moon_psa`, `?moon_params_norway`** —
+  function-by-function reference.
+- **`tests/testthat/`** — anchor values for the deterministic and
+  PSA paths; the reference `.rds` files are the ground truth a
+  build must reproduce to 1e-10.
+- **Bjørnelv et al. 2021** —
+  [doi:10.1177/0272989X20971589](https://doi.org/10.1177/0272989X20971589).
+  The supplementary appendix has the per-band transition tables and
+  the cost-model structure.
