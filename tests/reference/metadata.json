@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-05-07T11:40:41",
+  "r_version": "R version 4.6.0 (2026-04-24)",
+  "source": "canonical R/ code (moon_deterministic + moon_psa)",
+  "psa_seed": 123,
+  "n_iter": 1000,
+  "sexes": ["female", "male", "both"],
+  "git_hash": "e46ba0d8ba234e31161cb9e575f939bcdfd60ef4",
+  "packages": {
+    "flexsurv": "2.3.2",
+    "MASS": "7.3.65"
+  }
+}
