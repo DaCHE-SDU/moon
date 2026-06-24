@@ -1,0 +1,65 @@
+Package: moon
+Title: Modeling Obesity in Norway (MOON) Markov Cohort Model
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Nicolai", "Damslund",
+           email = "nsimonsen@health.sdu.dk",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-4649-3109")),
+    person("Gudrun M W", "Bjørnelv",
+           role = "aut",
+           comment = c("Original MOON model (Bjørnelv et al. 2021, doi:10.1177/0272989X20971589)",
+                       ORCID = "0000-0003-4997-5426")),
+    person("Yufei", "Jiang",
+           email = "yjiang@health.sdu.dk",
+           role = "aut",
+           comment = c("Ported the MOON model from the original Excel/VBA implementation to R",
+                       ORCID = "0009-0004-5389-7971")),
+    person("Magnus Skov", "Larsen",
+           email = "maskla@health.sdu.dk",
+           role = "aut",
+           comment = c("Ported the MOON model from the original Excel/VBA implementation to R",
+                       ORCID = "0009-0002-7481-734X")),
+    person("Christina Hansen", "Edwards",
+           email = "christina.h.edwards@ntnu.no",
+           role = "aut",
+           comment = c(ORCID = "0000-0003-2329-1739")),
+    person("Vidar", "Halsteinli",
+           role = "aut",
+           comment = c("Original MOON model (Bjørnelv et al. 2021, doi:10.1177/0272989X20971589)",
+                       ORCID = "0000-0002-1052-1737")),
+    person("Rønnaug A", "Ødegaard",
+           role = "aut",
+           comment = c("Original MOON model (Bjørnelv et al. 2021, doi:10.1177/0272989X20971589)")),
+    person("Line Planck", "Kongstad",
+           email = "lpkongstad@health.sdu.dk",
+           role = "aut",
+           comment = c(ORCID = "0000-0002-9625-5870")))
+Description: Implements the MOON Markov cohort model for simulating
+    obesity prevalence, incremental health-care costs, and years of life
+    lost in a Norwegian birth cohort over the life course. Originally
+    described in Bjørnelv et al. (2021) <doi:10.1177/0272989X20971589>;
+    this package is an R port and refactor of the Excel/VBA
+    implementation.
+License: MIT + file LICENSE
+URL: https://github.com/DaCHE-SDU/moon, https://dache-sdu.github.io/moon
+BugReports: https://github.com/DaCHE-SDU/moon/issues
+Encoding: UTF-8
+Language: en-GB
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends: 
+    R (>= 3.5)
+LazyData: true
+Imports: 
+    stats,
+    utils
+Suggests:
+    furrr,
+    future,
+    ggplot2,
+    knitr,
+    quarto,
+    scales,
+    testthat
+VignetteBuilder: quarto

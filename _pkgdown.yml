@@ -1,0 +1,59 @@
+url: https://dache-sdu.github.io/moon/
+
+template:
+  bootstrap: 5
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - moon-getting-started
+  - moon-customizing
+
+reference:
+- title: Run a model
+  desc: >
+    Top-level entry points for deterministic and probabilistic simulation
+    of the MOON Markov cohort model.
+  contents:
+  - moon_deterministic
+  - moon_psa
+  - run_markov_engine
+
+- title: Build parameters
+  desc: >
+    Build the bundled Norwegian default parameter set, define parametric
+    uncertainty for PSA, and validate `params` lists.
+  contents:
+  - moon_params_norway
+  - moon_param_fixed
+  - moon_param_lognormal
+  - moon_param_gamma
+  - moon_param_mvnorm
+  - moon_param_dirichlet
+  - moon_param-methods
+  - moon_sample_params
+  - moon_check_params
+
+- title: Inspect results
+  desc: >
+    Extractors and S3 methods over `moon_deterministic` and `moon_psa`
+    objects.
+  contents:
+  - moon_prevalence
+  - moon_costs
+  - moon_deterministic-methods
+  - moon_psa-methods
+
+- title: Package data
+  desc: >
+    BMI cut-off reference datasets shipped with the package; used by
+    a future `moon_classify_bmi()` and not by the engine itself.
+  contents:
+  - moon_who_cutoffs
+  - moon_iotf_cutoffs
+
+- title: internal
+  desc: Package-private helpers; not exported.
+  contents:
+  - has_keyword("internal")

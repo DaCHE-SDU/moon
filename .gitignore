@@ -1,0 +1,36 @@
+# R artifacts
+.Rproj.user
+.Rhistory
+.RData
+.Rdata
+.Ruserdata
+*.Rproj
+
+# Build artifacts
+*.tar.gz
+*.Rcheck/
+
+# pkgdown site — regenerated and deployed by CI, never committed to main
+docs/
+
+# Quarto build caches
+.quarto/
+/vignettes/.quarto/
+
+# OS junk
+.DS_Store
+
+# Archived private history bundle
+*.bundle
+
+# Dev scaffolding — must never reach the public repo
+.claude/
+CLAUDE.md
+session-handoff.md
+DOC_REMINDERS.md
+meeting-notes-inputs.*
+
+# Local benchmark / scratch scripts
+bench_*.R
+bench_*.rds
+demo_deterministic.R
