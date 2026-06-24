@@ -12,6 +12,7 @@ Implements the MOON Markov cohort model for simulating obesity prevalence, incre
 Useful links:
 \itemize{
   \item \url{https://github.com/DaCHE-SDU/moon}
+  \item \url{https://dache-sdu.github.io/moon}
   \item Report bugs at \url{https://github.com/DaCHE-SDU/moon/issues}
 }
 
