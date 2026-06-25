@@ -35,7 +35,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/DaCHE-SDU/moon/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/DaCHE-SDU/moon/blob/v0.1.0/DESCRIPTION)
 
 Damslund N, Bjørnelv G, Jiang Y, Larsen M, Edwards C, Halsteinli V,
 Ødegaard R, Kongstad L (2026). *moon: Modeling Obesity in Norway (MOON)

@@ -768,7 +768,7 @@ print(psa_F)
       Sex:           female
       Seed:          123
       Parallel:      FALSE
-      Runtime:       0.74 s
+      Runtime:       0.75 s
       Correlate HR:  TRUE
       Correlate $:   TRUE
       Store traces:  all
