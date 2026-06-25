@@ -1,10 +1,10 @@
 # Changelog
 
-## moon 0.0.0.9000 (development)
+## moon 0.1.0
 
 ### New features
 
-- First packaged version of the MOON Markov cohort model.
+- First public release of the MOON Markov cohort model.
 - Public API:
   [`moon_params_norway()`](https://dache-sdu.github.io/moon/reference/moon_params_norway.md)
   builds the Norwegian default parameter set (or a spec’d uncertainty

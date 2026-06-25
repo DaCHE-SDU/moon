@@ -39,13 +39,13 @@ Source:
 
 Damslund N, Bjørnelv G, Jiang Y, Larsen M, Edwards C, Halsteinli V,
 Ødegaard R, Kongstad L (2026). *moon: Modeling Obesity in Norway (MOON)
-Markov Cohort Model*. R package version 0.0.0.9000,
+Markov Cohort Model*. R package version 0.1.0,
 <https://github.com/DaCHE-SDU/moon>.
 
     @Manual{,
       title = {moon: Modeling Obesity in Norway (MOON) Markov Cohort Model},
       author = {Nicolai Damslund and Gudrun M W Bjørnelv and Yufei Jiang and Magnus Skov Larsen and Christina Hansen Edwards and Vidar Halsteinli and Rønnaug A Ødegaard and Line Planck Kongstad},
       year = {2026},
-      note = {R package version 0.0.0.9000},
+      note = {R package version 0.1.0},
       url = {https://github.com/DaCHE-SDU/moon},
     }
