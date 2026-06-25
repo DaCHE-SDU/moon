@@ -35,7 +35,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/DaCHE-SDU/moon/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/DaCHE-SDU/moon/blob/v0.1.1/inst/CITATION)
 
 Damslund N, Bjørnelv G, Jiang Y, Larsen M, Edwards C, Halsteinli V,
 Ødegaard R, Kongstad L (2026). *moon: An R Package Implementing the
