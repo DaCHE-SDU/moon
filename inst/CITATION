@@ -1,0 +1,30 @@
+if (!exists("meta") || is.null(meta)) {
+  meta <- packageDescription("moon")
+}
+ver <- meta$Version
+if (is.null(ver) || is.na(ver)) ver <- "0.1.1"
+
+citHeader(
+  "To cite the moon package in publications, use the software citation below. ",
+  "Please also cite the original model paper: Bjørnelv et al. (2021), ",
+  "Medical Decision Making, 41(1):21-36, doi:10.1177/0272989X20971589."
+)
+
+bibentry(
+  bibtype = "Manual",
+  title   = "moon: An R Package Implementing the Modeling Obesity in Norway (MOON) Markov Cohort Model",
+  author  = c(
+    person("Nicolai", "Damslund"),
+    person("Gudrun M W", "Bjørnelv"),
+    person("Yufei", "Jiang"),
+    person("Magnus Skov", "Larsen"),
+    person("Christina Hansen", "Edwards"),
+    person("Vidar", "Halsteinli"),
+    person("Rønnaug A", "Ødegaard"),
+    person("Line Planck", "Kongstad")
+  ),
+  year    = "2026",
+  note    = paste("R package version", ver),
+  doi     = "10.5281/zenodo.20842690",
+  url     = "https://dache-sdu.github.io/moon/"
+)
