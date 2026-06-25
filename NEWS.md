@@ -1,8 +1,8 @@
-# moon 0.0.0.9000 (development)
+# moon 0.1.0
 
 ## New features
 
-* First packaged version of the MOON Markov cohort model.
+* First public release of the MOON Markov cohort model.
 * Public API: `moon_params_norway()` builds the Norwegian default
   parameter set (or a spec'd uncertainty version);
   `moon_deterministic()` runs a single deterministic simulation;

@@ -18,3 +18,4 @@
 ^\.quarto$
 ^CODE_OF_CONDUCT\.md$
 ^\.github$
+^\.zenodo\.json$
