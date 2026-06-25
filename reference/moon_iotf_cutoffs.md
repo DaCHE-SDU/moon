@@ -1,0 +1,61 @@
+# Cole/IOTF child BMI cut-offs (LMS-based, ages 2–18, both sexes)
+
+Age- and sex-specific BMI cut-offs for children aged 2–18, derived from
+the pooled LMS curves in Cole & Lobstein (2012). Each row gives the
+three BMI values that, at the corresponding age and sex, are equivalent
+to adult BMI 25, 30, and 35 — the boundaries between MOON's NW / OW /
+OB1 / OB2 states.
+
+## Usage
+
+``` r
+moon_iotf_cutoffs
+```
+
+## Format
+
+A data frame with 66 rows and 5 columns:
+
+- age:
+
+  Numeric. Age in years, from `2.0` to `18.0` in 0.5-year steps.
+
+- sex:
+
+  Character. `"female"` or `"male"`.
+
+- cutoff_NW:
+
+  Numeric BMI. Separates NW from OW (BMI 25 line).
+
+- cutoff_OW:
+
+  Numeric BMI. Separates OW from OB1 (BMI 30 line).
+
+- cutoff_OB1:
+
+  Numeric BMI. Separates OB1 from OB2 (BMI 35 line, the morbid-obesity
+  threshold added in the 2012 update).
+
+## Source
+
+Cole TJ, Lobstein T. Extended international (IOTF) body mass index
+cut-offs for thinness, overweight and obesity. *Pediatric Obesity*.
+2012;7(4):284–294.
+[doi:10.1111/j.2047-6310.2012.00064.x](https://doi.org/10.1111/j.2047-6310.2012.00064.x)
+. Web Table W2, BMI 25 / 30 / 35 columns.
+
+## Details
+
+At age 18 the cut-offs equal the adult anchor values (25 / 30 / 35) by
+definition. The 2012 LMS-based values differ from Cole et al. (2000)
+country-averaged values by less than 0.2% on average.
+
+Only the BMI 25 / 30 / 35 columns of Cole 2012's Web Table W2 are
+reproduced here; the BMI 16 / 17 / 18.5 thinness columns are not used by
+the engine and are omitted.
+
+## See also
+
+[moon_who_cutoffs](https://dache-sdu.github.io/moon/reference/moon_who_cutoffs.md)
+for the adult anchor values.
