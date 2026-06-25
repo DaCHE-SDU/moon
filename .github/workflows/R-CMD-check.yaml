@@ -45,16 +45,19 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # Install the development quarto R package: it passes .libPaths() to
-          # the Quarto CLI subprocess, which R CMD check needs in order to
-          # rebuild Quarto (.qmd) vignettes on Windows (otherwise the subprocess
-          # R session cannot find the package under check -> "there is no
-          # package called 'moon'"). This fix is not yet in the CRAN release
-          # (quarto 1.5.1); drop this override once quarto > 1.5.1 is on CRAN.
-          extra-packages: |
-            any::rcmdcheck
-            quarto-dev/quarto-r
+          extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Install moon so Quarto vignettes can load it
+        # R CMD build/check rebuild the Quarto (.qmd) vignettes by launching the
+        # Quarto CLI as a subprocess. On Windows that subprocess R session does
+        # not inherit R CMD check's temporary library, so `library(moon)` fails
+        # with "there is no package called 'moon'". Installing the package into
+        # the regular library up front makes it resolvable during the vignette
+        # rebuild. (Published packages such as ggplot2 don't hit this because a
+        # CRAN copy is already on the library path.)
+        run: R CMD INSTALL .
+        shell: bash
 
       - uses: r-lib/actions/check-r-package@v2
         with:
