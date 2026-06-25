@@ -83,8 +83,23 @@ for the correlation flags and `store_traces` options.
 
 ## Citation
 
-If you use `moon` in published work, please cite the original paper that
-specifies the model:
+If you use `moon` in published work, please cite **both** the software
+and the original model paper. Running `citation("moon")` returns these
+entries.
+
+**Software** (this package):
+
+> Damslund N, Bjørnelv GMW, Jiang Y, Larsen MS, Edwards CH, Halsteinli
+> V, Ødegaard RA, Kongstad LP (2026). *moon: An R Package Implementing
+> the Modeling Obesity in Norway (MOON) Markov Cohort Model.*
+> [doi:10.5281/zenodo.20842690](https://doi.org/10.5281/zenodo.20842690)
+> (concept DOI; resolves to the latest version).
+> <https://dache-sdu.github.io/moon/>
+
+For reproducibility, cite the version DOI of the specific release you
+used.
+
+**Model** (original paper):
 
 > Bjørnelv GMW, Halsteinli V, Kulseng BE, Sonntag D, Ødegaard RA.
 > Modeling Obesity in Norway (The MOON Study): A Decision-Analytic

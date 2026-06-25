@@ -35,17 +35,19 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/DaCHE-SDU/moon/blob/v0.1.0/DESCRIPTION)
+[`inst/CITATION`](https://github.com/DaCHE-SDU/moon/blob/main/inst/CITATION)
 
 Damslund N, Bjørnelv G, Jiang Y, Larsen M, Edwards C, Halsteinli V,
-Ødegaard R, Kongstad L (2026). *moon: Modeling Obesity in Norway (MOON)
-Markov Cohort Model*. R package version 0.1.0,
-<https://github.com/DaCHE-SDU/moon>.
+Ødegaard R, Kongstad L (2026). *moon: An R Package Implementing the
+Modeling Obesity in Norway (MOON) Markov Cohort Model*.
+[doi:10.5281/zenodo.20842690](https://doi.org/10.5281/zenodo.20842690).
+R package version 0.1.1, <https://dache-sdu.github.io/moon/>.
 
     @Manual{,
-      title = {moon: Modeling Obesity in Norway (MOON) Markov Cohort Model},
+      title = {moon: An R Package Implementing the Modeling Obesity in Norway (MOON) Markov Cohort Model},
       author = {Nicolai Damslund and Gudrun M W Bjørnelv and Yufei Jiang and Magnus Skov Larsen and Christina Hansen Edwards and Vidar Halsteinli and Rønnaug A Ødegaard and Line Planck Kongstad},
       year = {2026},
-      note = {R package version 0.1.0},
-      url = {https://github.com/DaCHE-SDU/moon},
+      note = {R package version 0.1.1},
+      doi = {10.5281/zenodo.20842690},
+      url = {https://dache-sdu.github.io/moon/},
     }

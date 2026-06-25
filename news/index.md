@@ -1,5 +1,13 @@
 # Changelog
 
+## moon 0.1.1
+
+- Add citation infrastructure now that the package is archived on
+  Zenodo: `CITATION.cff`, `inst/CITATION` (so `citation("moon")` returns
+  the software citation with the Zenodo concept DOI
+  `10.5281/zenodo.20842690`), and a DOI badge plus software citation in
+  the README.
+
 ## moon 0.1.0
 
 ### New features
